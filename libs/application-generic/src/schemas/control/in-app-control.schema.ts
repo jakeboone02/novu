@@ -33,17 +33,31 @@ const actionZodSchema = z
   })
   .optional();
 
-export const inAppControlZodSchema = z.object({
+// First, define the common properties that both schema variants will share
+const commonInAppProperties = {
   skip: skipZodSchema,
   disableOutputSanitization: z.boolean().optional(),
-  subject: z.string().optional(),
-  body: z.string(),
   avatar: z.string().regex(redirectUrlRegex).optional(),
   primaryAction: actionZodSchema,
   secondaryAction: actionZodSchema,
   data: z.object({}).catchall(z.unknown()).optional(),
   redirect: redirectZodSchema.optional(),
+};
+
+const subjectRequiredSchema = z.object({
+  subject: z.string(),
+  body: z.string().optional(),
+  ...commonInAppProperties,
 });
+
+const bodyRequiredSchema = z.object({
+  subject: z.string().optional(),
+  body: z.string(),
+  ...commonInAppProperties,
+});
+
+// Write it this way because of how translation from zod to json schema works
+export const inAppControlZodSchema = z.union([subjectRequiredSchema, bodyRequiredSchema]);
 
 export type InAppRedirectType = z.infer<typeof redirectZodSchema>;
 export type InAppActionType = z.infer<typeof actionZodSchema>;
